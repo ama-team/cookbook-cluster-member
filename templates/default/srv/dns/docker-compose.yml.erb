@@ -1,0 +1,30 @@
+version: '2.1'
+networks:
+  <% @bindings.each do |id, network_bindings| %>
+  <%= id %>:
+    external: true
+  <% end %>
+services:
+  dnsmasq:
+    image: andyshinn/dnsmasq:2.76
+    ports:
+      - 127.0.0.1:53:53
+      - 127.0.0.1:53:53/udp
+    logging:
+      driver: json-file
+      options:
+        max-file: '10'
+        max-size: 100k
+    command:
+      <% @hosts.each do |host, addresses| %>
+      <% addresses.each do |address| %>
+      - --address=/<%= host %>/<%= address %>
+      <% end %>
+      <% end %>
+    restart: unless-stopped
+    networks:
+      <% @bindings.each do |id, network_bindings| %>
+      <%= id %>:
+        <% if network_bindings.ipv4 %>ipv4_address: <%= network_bindings.ipv4 %><% end %>
+        <% if network_bindings.ipv6 %>ipv6_address: <%= network_bindings.ipv6 %><% end %>
+      <% end %>
